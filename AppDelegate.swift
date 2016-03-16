@@ -18,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
     
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        sleep(1)
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "showAd", name: "showAd", object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "hideAd", name: "hideAd", object: nil)

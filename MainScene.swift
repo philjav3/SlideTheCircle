@@ -11,21 +11,22 @@ import GameKit
 
 var wallSpeed: Double = 3
 var wallFreq: Double = 0.5
-var arrowPos: CGPoint = CGPoint(x: 100, y: 550)
+var arrowPos: CGPoint = CGPoint(x: 100, y: 530)
 var bestEasy: Int = 0, bestMedium: Int = 0, bestHard: Int = 0
 enum Difficulty {
     case Easy, Medium, Hard
 }
 var difficulty = Difficulty.Easy
 var best: Int = 0
+let defaults = NSUserDefaults.standardUserDefaults()
 var identifier: String = "easy"
 
 class MainScene: SKScene, GKGameCenterControllerDelegate {
     var touchLocation: CGPoint = CGPointZero
     var startLabel, easyLabel, mediumLabel, hardLabel: SKLabelNode!
-    var easy, medium, hard, arrow, gameCenter: SKSpriteNode!
+    var easy, medium, hard, arrow, gameCenter, safeZone: SKSpriteNode!
     var walls: SKNode!
-    var height: Int = 540, bestEasy: Int = 0, bestMedium: Int = 0, bestHard: Int = 0
+    var height: Int = 540
     
     override func didMoveToView(view: SKView) {
         NSNotificationCenter.defaultCenter().postNotificationName("showAd", object: nil)
@@ -42,12 +43,16 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         arrow = self.childNodeWithName("arrow") as! SKSpriteNode
         arrow.position = arrowPos
         gameCenter = self.childNodeWithName("gameCenter") as! SKSpriteNode
+        safeZone = self.childNodeWithName("safeZone") as! SKSpriteNode
         
-        // Load best scores
-        let defaults = NSUserDefaults.standardUserDefaults()
+        // load local high scores
         bestEasy = defaults.integerForKey("bestEasyScore")
-        bestMedium = defaults.integerForKey("bestMedScore")
+        bestMedium = defaults.integerForKey("bestMediumScore")
         bestHard = defaults.integerForKey("bestHardScore")
+        
+        // wait a second and check authentication
+        performSelector("checkAuthentication", withObject: nil, afterDelay: 3)
+        
         if difficulty == Difficulty.Easy {
             best = bestEasy
         }
@@ -57,7 +62,7 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         else if difficulty == Difficulty.Hard {
             best = bestHard
         }
-        
+            
         easyLabel = self.childNodeWithName("easyLabel") as! SKLabelNode
         easyLabel.text = "Best: \(bestEasy)"
         mediumLabel = self.childNodeWithName("mediumLabel") as! SKLabelNode
@@ -69,6 +74,12 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         let wait = SKAction.waitForDuration(wallFreq)
         let sequence2 = SKAction.sequence([spawn, wait])
         self.runAction(SKAction.repeatActionForever(sequence2))
+    }
+    
+    func checkAuthentication() {
+        if player.authenticated {
+            getBestScores()
+        }
     }
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -115,7 +126,7 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         else if gameCenter.containsPoint(touchLocation) {
             showLeaderboard()
         }
-        else {
+        else if self.containsPoint(touchLocation) && !(safeZone.containsPoint(touchLocation)) {
             let game: GameScene = GameScene(fileNamed: "GameScene")!
             game.scaleMode = .AspectFit
             self.view?.presentScene(game, transition: SKTransition.fadeWithColor(UIColor.whiteColor(), duration: 1))
@@ -163,6 +174,57 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
     func gameCenterViewControllerDidFinish(gameCenterViewController: GKGameCenterViewController) {
         gameCenterViewController.dismissViewControllerAnimated(true, completion: nil)
         
+    }
+    
+    // compare local high scores with Game Center high scores
+    func getBestScores() {
+        if bestEasy >= bestEasyGC {
+            //print("\nlocal easy score equal or better")
+            saveHighScore(bestEasy, ident: "easy")
+        }
+        else {
+            //print("\nGC easy score better")
+            bestEasy = bestEasyGC
+            defaults.setInteger(bestEasy, forKey: "bestEasyScore")
+            easyLabel.text = "Best: \(bestEasy)"
+        }
+        
+        if bestMedium >= bestMediumGC {
+            //print("\nlocal medium score equal or better")
+            saveHighScore(bestMedium, ident: "medium")
+        }
+        else {
+            //print("\nGC medium score better")
+            bestMedium = bestMediumGC
+            defaults.setInteger(bestMedium, forKey: "bestMediumScore")
+            mediumLabel.text = "Best: \(bestMedium)"
+        }
+        
+        if bestHard >= bestHardGC {
+            //print("\nlocal hard score equal or better")
+            saveHighScore(bestHard, ident: "hard")
+        }
+        else {
+            //print("\nGC hard score better")
+            bestHard = bestHardGC
+            defaults.setInteger(bestHard, forKey: "bestHardScore")
+            hardLabel.text = "Best: \(bestHard)"
+        }
+    }
+    
+    // send high score to leaderboard
+    func saveHighScore(highScore: Int, ident: String) {
+        // check if user is signed in
+        if GKLocalPlayer.localPlayer().authenticated {
+            let scoreReporter = GKScore(leaderboardIdentifier: ident)
+            scoreReporter.value = Int64(highScore)
+            let scoreArray: [GKScore] = [scoreReporter]
+            GKScore.reportScores(scoreArray, withCompletionHandler: {(error: NSError?) -> Void in
+                if error != nil {
+                    print("error")
+                }
+            })
+        }
     }
 }
 

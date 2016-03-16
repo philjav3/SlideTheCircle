@@ -47,6 +47,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel2.position = CGPoint(x: 2020, y: 450)
         
         self.physicsWorld.contactDelegate = self
+        self.view?.multipleTouchEnabled = false
     }
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -140,17 +141,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if score > best {
             best = score
-            let defaults = NSUserDefaults.standardUserDefaults()
             if difficulty == Difficulty.Easy {
                 defaults.setInteger(best, forKey: "bestEasyScore")
             }
             else if difficulty == Difficulty.Medium {
-                defaults.setInteger(best, forKey: "bestMedScore")
+                defaults.setInteger(best, forKey: "bestMediumScore")
             }
             else if difficulty == Difficulty.Hard {
                 defaults.setInteger(best, forKey: "bestHardScore")
             }
-            saveHighScore(best)
+            if player.authenticated {
+                saveHighScore(best)
+            }
         }
         
         // show game over screen
@@ -183,4 +185,3 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 }
-

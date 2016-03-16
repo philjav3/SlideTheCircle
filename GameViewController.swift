@@ -11,12 +11,23 @@ import SpriteKit
 import GameKit
 import iAd
 
+var player = GKLocalPlayer.localPlayer()
+var gameCenterEnabled: Bool = false
+var bestEasyGC: Int = 0, bestMediumGC: Int = 0, bestHardGC: Int = 0
+
 class GameViewController: UIViewController, ADBannerViewDelegate {
-    var gameCenterEnabled: Bool = false
-    var leaderboardIdentifier: String = "easy"
+    //var leaderboardIdentifier: String = "easy"
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        authenticatePlayer()
+        
+        loadGCScore("easy")
+        loadGCScore("medium")
+        loadGCScore("hard")
+        
+        loadAds()
         
         if let scene = MainScene(fileNamed:"MainScene") {
             // Configure the view.
@@ -32,38 +43,68 @@ class GameViewController: UIViewController, ADBannerViewDelegate {
             
             skView.presentScene(scene)
         }
-        loadAds()
-        authenticatePlayer()
     }
     
-    // initiate GameCenter
+    // Game Center sign in screen
     func authenticatePlayer() {
-        let player = GKLocalPlayer()
         player.authenticateHandler = {(viewController, error) -> Void in
-            if (viewController != nil) {
+            // present sign in screen if device doesn't have an authenticated player
+            if viewController != nil {
                 self.presentViewController(viewController!, animated: true, completion: nil)
             }
-            else {
-                if player.authenticated {
-                    self.gameCenterEnabled = true
-                    
-                    player.loadDefaultLeaderboardIdentifierWithCompletionHandler({ (leaderboardIdentifier : String?, error : NSError?) -> Void in
-                        if error != nil {
-                            print(error!.localizedDescription)
-                        }
-                        else {
-                            self.leaderboardIdentifier = leaderboardIdentifier!
-                        }
-                    })
-                    
-                }
-                else {
-                    self.gameCenterEnabled = false
-                }
+            
+            /*if player.authenticated {
+                gameCenterEnabled = true
+                print("\nGC enabled\n")
+                print("\nAuthentication: \(player.authenticated)")
+                
+                player.loadDefaultLeaderboardIdentifierWithCompletionHandler({ (leaderboardIdentifier : String?, error : NSError?) -> Void in
+                    if error != nil {
+                        print(error!.localizedDescription)
+                    }
+                    else {
+                        self.leaderboardIdentifier = leaderboardIdentifier!
+                    }
+                })
+                
             }
+            else {
+                gameCenterEnabled = false
+                print("\nGC disabled\n")
+                print("\nAuthentication: \(player.authenticated)")
+            }*/
         }
     }
     
+    // load high scores from Game Center
+    func loadGCScore(leaderboard: String) {
+        let leaderboardRequest = GKLeaderboard()
+        leaderboardRequest.identifier = leaderboard
+        leaderboardRequest.loadScoresWithCompletionHandler { (scores, error) -> Void in
+            if error != nil {
+                print("Error: \(error))")
+            }
+            else if leaderboardRequest.localPlayerScore != nil {
+                let leaderboardScore = leaderboardRequest.localPlayerScore!.value
+                if leaderboard == "easy" {
+                    bestEasyGC = Int(leaderboardScore)
+                }
+                else if leaderboard == "medium" {
+                    bestMediumGC = Int(leaderboardScore)
+                }
+                else if leaderboard == "hard" {
+                    bestHardGC = Int(leaderboardScore)
+                }
+                
+            }
+            else {
+                bestEasyGC = 0
+                bestMediumGC = 0
+                bestHardGC = 0
+            }
+        }
+    }
+
     override func shouldAutorotate() -> Bool {
         return true
     }
