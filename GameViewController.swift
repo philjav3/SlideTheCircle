@@ -9,14 +9,14 @@
 import UIKit
 import SpriteKit
 import GameKit
-import iAd
+import GoogleMobileAds
 
+var adBanner: GADBannerView = GADBannerView()
 var player = GKLocalPlayer.localPlayer()
 var gameCenterEnabled: Bool = false
 var bestEasyGC: Int = 0, bestMediumGC: Int = 0, bestHardGC: Int = 0
 
-class GameViewController: UIViewController, ADBannerViewDelegate {
-    //var leaderboardIdentifier: String = "easy"
+class GameViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,27 +52,6 @@ class GameViewController: UIViewController, ADBannerViewDelegate {
             if viewController != nil {
                 self.presentViewController(viewController!, animated: true, completion: nil)
             }
-            
-            /*if player.authenticated {
-                gameCenterEnabled = true
-                print("\nGC enabled\n")
-                print("\nAuthentication: \(player.authenticated)")
-                
-                player.loadDefaultLeaderboardIdentifierWithCompletionHandler({ (leaderboardIdentifier : String?, error : NSError?) -> Void in
-                    if error != nil {
-                        print(error!.localizedDescription)
-                    }
-                    else {
-                        self.leaderboardIdentifier = leaderboardIdentifier!
-                    }
-                })
-                
-            }
-            else {
-                gameCenterEnabled = false
-                print("\nGC disabled\n")
-                print("\nAuthentication: \(player.authenticated)")
-            }*/
         }
     }
     
@@ -104,6 +83,23 @@ class GameViewController: UIViewController, ADBannerViewDelegate {
             }
         }
     }
+    
+    func loadAds() {
+        adBanner.frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.height/7.5)
+        //adBanner.adUnitID = "ca-app-pub-3940256099942544/2934735716" // for test ads
+        adBanner.adUnitID = "ca-app-pub-6416730604045860/5281247703"
+        adBanner.rootViewController = self
+        
+        let request = GADRequest()
+        //request.testDevices = [kGADSimulatorID] // for simulator
+        adBanner.loadRequest(request)
+        self.view.addSubview(adBanner)
+    }
+    
+    func adView(bannerView: GADBannerView!, didFailToReceiveAdWithError error: GADRequestError!) {
+        print("adView:didFailToReceiveAdWithError: \(error.localizedDescription)")
+        adBanner.hidden = true
+    }
 
     override func shouldAutorotate() -> Bool {
         return true
@@ -124,26 +120,5 @@ class GameViewController: UIViewController, ADBannerViewDelegate {
     
     override func prefersStatusBarHidden() -> Bool {
         return true
-    }
-    
-    // iAd functions
-    func loadAds() {
-        adBanner = ADBannerView(frame: CGRectZero)
-        adBanner.delegate = self
-        adBanner.hidden = true
-        view!.addSubview(adBanner)
-    }
-    
-    func bannerViewDidLoadAd(banner: ADBannerView!) {
-        adBanner.center = CGPoint(x: adBanner.center.x, y: view!.bounds.size.height - view!.bounds.size.height + adBanner.frame.size.height / 2)
-        adBanner.hidden = false
-    }
-    
-    func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
-        return true
-    }
-    
-    func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-        adBanner.hidden = true
     }
 }

@@ -7,21 +7,15 @@
 //
 
 import UIKit
-import iAd
-
-var adBanner: ADBannerView = ADBannerView()
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
     
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
         sleep(1)
-        
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "showAd", name: "showAd", object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "hideAd", name: "hideAd", object: nil)
         
         return true
     }
@@ -46,18 +40,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
     
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
-    
-    func showAd() {
-        if adBanner.bannerLoaded {
-            adBanner.hidden = false
-        }
-    }
-    func hideAd() {
-        adBanner.hidden = true
-    }
-    
-    func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-        adBanner.hidden = true
     }
 }

@@ -16,19 +16,22 @@ let scoreMask: UInt32 = 0x1 << 3 // 8
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     var touchLocation: CGPoint = CGPointZero
-    var node, dummy, blur, playAgain, mainMenu: SKSpriteNode!
+    var ball, dummy, blur, playAgain, mainMenu: SKSpriteNode!
     var gameOverLabel, scoreLabel, scoreLabel2, bestLabel: SKLabelNode!
     var instructions, scoreText, bestText: SKLabelNode!
     var walls: SKNode!
     var started: Bool = false
     var score: Int = 0, height: Int = 540
+    var sparkColor: UIColor = UIColor(red: 22/255, green: 112/255, blue: 234/255, alpha: 1)
     
     override func didMoveToView(view: SKView) {
-        NSNotificationCenter.defaultCenter().postNotificationName("hideAd", object: nil)
+        adBanner.hidden = true
         
-        node = self.childNodeWithName("node") as! SKSpriteNode
-        node.removeFromParent()
+        ball = self.childNodeWithName("node") as! SKSpriteNode
+        ball.texture = SKTexture(imageNamed: ballColor)
+        ball.removeFromParent()
         dummy = self.childNodeWithName("dummy") as! SKSpriteNode
+        dummy.texture = SKTexture(imageNamed: ballColor)
         instructions = self.childNodeWithName("instructions") as! SKLabelNode
         scoreLabel = self.childNodeWithName("score") as! SKLabelNode
         
@@ -52,14 +55,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
         touchLocation = touches.first!.locationInNode(self)
-        node.physicsBody?.collisionBitMask = wallMask
-        node.physicsBody?.contactTestBitMask = wallMask | scoreMask
+        ball.physicsBody?.collisionBitMask = wallMask
+        ball.physicsBody?.contactTestBitMask = wallMask | scoreMask
         
         // Start walls
         if !started {
             started = true
             dummy.removeFromParent()
-            self.addChild(node)
+            self.addChild(ball)
             let fade = SKAction.fadeAlphaBy(-1, duration: 0.5)
             let remove = SKAction.removeFromParent()
             let sequence1 = SKAction.sequence([fade,remove])
@@ -89,7 +92,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(currentTime: CFTimeInterval) {
-        node.position.y = touchLocation.y
+        ball.position.y = touchLocation.y
     }
     
     func didBeginContact(contact: SKPhysicsContact) {
@@ -135,9 +138,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func gameOver() {
         let spark: SKEmitterNode = SKEmitterNode(fileNamed: "Spark")!
-        spark.position = node.position
+        if ballColor == "circleR" {
+            sparkColor = UIColor(red: 219/255, green: 0, blue: 0, alpha: 1)
+        }
+        else if ballColor == "circleO" {
+            sparkColor = UIColor(red: 1, green: 165/255, blue: 0, alpha: 1)
+        }
+        else if ballColor == "circleY" {
+            sparkColor = UIColor(red: 1, green: 1, blue: 0, alpha: 1)
+        }
+        else if ballColor == "circleG" {
+            sparkColor = UIColor(red: 0, green: 219/255, blue: 82/255, alpha: 1)
+        }
+        else if ballColor == "circleB" {
+            sparkColor = UIColor(red: 22/255, green: 112/255, blue: 234/255, alpha: 1)
+        }
+        else if ballColor == "circleP" {
+            sparkColor = UIColor(red: 210/255, green: 87/255, blue: 1, alpha: 1)
+        }
+        spark.particleColorSequence = nil
+        spark.particleColor = sparkColor
+        spark.position = ball.position
         self.addChild(spark)
-        node.removeFromParent()
+        ball.removeFromParent()
         
         if score > best {
             best = score
@@ -167,7 +190,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreText.runAction(SKAction.moveToX(1150, duration: 1))
         scoreLabel2.runAction(SKAction.moveToX(1150, duration: 1))
         
-        NSNotificationCenter.defaultCenter().postNotificationName("showAd", object: nil)
+        adBanner.hidden = false
     }
     
     // send high score to leaderboard

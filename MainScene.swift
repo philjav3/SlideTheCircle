@@ -20,16 +20,20 @@ var difficulty = Difficulty.Easy
 var best: Int = 0
 let defaults = NSUserDefaults.standardUserDefaults()
 var identifier: String = "easy"
+var ballColor: String! = "circleB"
+var outlinePos: CGPoint = CGPoint(x: 1300, y: 150)
 
 class MainScene: SKScene, GKGameCenterControllerDelegate {
     var touchLocation: CGPoint = CGPointZero
     var startLabel, easyLabel, mediumLabel, hardLabel: SKLabelNode!
-    var easy, medium, hard, arrow, gameCenter, safeZone: SKSpriteNode!
+    var easy, medium, hard, arrow, gameCenter, safeZone, safeZone2: SKSpriteNode!
+    var red, orange, yellow, green, blue, purple, outline: SKSpriteNode!
     var walls: SKNode!
     var height: Int = 540
+    var fade1, fade2, fadeSeq: SKAction!
     
     override func didMoveToView(view: SKView) {
-        NSNotificationCenter.defaultCenter().postNotificationName("showAd", object: nil)
+        adBanner.hidden = false
         
         startLabel = self.childNodeWithName("tapToStart") as! SKLabelNode
         let action1 = SKAction.scaleBy(6/5, duration: 0.5)
@@ -44,6 +48,37 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         arrow.position = arrowPos
         gameCenter = self.childNodeWithName("gameCenter") as! SKSpriteNode
         safeZone = self.childNodeWithName("safeZone") as! SKSpriteNode
+        safeZone2 = self.childNodeWithName("safeZone2") as! SKSpriteNode
+        
+        red = self.childNodeWithName("red") as! SKSpriteNode
+        orange = self.childNodeWithName("orange") as! SKSpriteNode
+        yellow = self.childNodeWithName("yellow") as! SKSpriteNode
+        green = self.childNodeWithName("green") as! SKSpriteNode
+        blue = self.childNodeWithName("blue") as! SKSpriteNode
+        purple = self.childNodeWithName("purple") as! SKSpriteNode
+        outline = self.childNodeWithName("outline") as! SKSpriteNode
+        if let savedColor = defaults.valueForKey("ballColor") {
+            ballColor = String(savedColor)
+        }
+        if ballColor == "circleR" {
+            outlinePos = red.position
+        }
+        else if ballColor == "circleO" {
+            outlinePos = orange.position
+        }
+        else if ballColor == "circleY" {
+            outlinePos = yellow.position
+        }
+        else if ballColor == "circleG" {
+            outlinePos = green.position
+        }
+        else if ballColor == "circleB" {
+            outlinePos = blue.position
+        }
+        else if ballColor == "circleP" {
+            outlinePos = purple.position
+        }
+        outline.position = outlinePos
         
         // load local high scores
         bestEasy = defaults.integerForKey("bestEasyScore")
@@ -87,9 +122,32 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
     }
     
     override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
-        if easy.containsPoint(touchLocation) {
+        if red.containsPoint(touchLocation) {
+            ballColor = "circleR"
+            outlinePos = red.position
+        }
+        else if orange.containsPoint(touchLocation) {
+            ballColor = "circleO"
+            outlinePos = orange.position
+        }
+        else if yellow.containsPoint(touchLocation) {
+            ballColor = "circleY"
+            outlinePos = yellow.position
+        }
+        else if green.containsPoint(touchLocation) {
+            ballColor = "circleG"
+            outlinePos = green.position
+        }
+        else if blue.containsPoint(touchLocation) {
+            ballColor = "circleB"
+            outlinePos = blue.position
+        }
+        else if purple.containsPoint(touchLocation) {
+            ballColor = "circleP"
+            outlinePos = purple.position
+        }
+        else if easy.containsPoint(touchLocation) {
             if arrow.position.y != easy.position.y {
-                arrow.position.y = easy.position.y
                 arrowPos.y = easy.position.y
                 wallSpeed = 3
                 wallFreq = 0.5
@@ -101,7 +159,6 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         }
         else if medium.containsPoint(touchLocation) {
             if arrow.position.y != medium.position.y {
-                arrow.position.y = medium.position.y
                 arrowPos.y = medium.position.y
                 wallSpeed = 2
                 wallFreq = 0.3
@@ -113,7 +170,6 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         }
         else if hard.containsPoint(touchLocation) {
             if arrow.position.y != hard.position.y {
-                arrow.position.y = hard.position.y
                 arrowPos.y = hard.position.y
                 wallSpeed = 1.5
                 wallFreq = 0.25
@@ -126,11 +182,16 @@ class MainScene: SKScene, GKGameCenterControllerDelegate {
         else if gameCenter.containsPoint(touchLocation) {
             showLeaderboard()
         }
-        else if self.containsPoint(touchLocation) && !(safeZone.containsPoint(touchLocation)) {
+        else if self.containsPoint(touchLocation) && !(safeZone.containsPoint(touchLocation))
+            && !(safeZone2.containsPoint(touchLocation)) {
             let game: GameScene = GameScene(fileNamed: "GameScene")!
             game.scaleMode = .AspectFit
             self.view?.presentScene(game, transition: SKTransition.fadeWithColor(UIColor.whiteColor(), duration: 1))
         }
+        
+        arrow.position.y = arrowPos.y
+        outline.position = outlinePos
+        defaults.setValue(ballColor, forKey: "ballColor")
     }
     
     func spawnWalls() {
